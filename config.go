@@ -31,6 +31,20 @@ func Parse(src string, config any) error {
 	return unescape(config)
 }
 
+func Dump(config any, dst string) error {
+	raw, err := json.MarshalIndent(config, "", " ")
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(dst, raw, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func unescape(cfg any) error {
 	dt := reflect.TypeOf(cfg)
 	if dt.Kind() != reflect.Pointer {

@@ -1,0 +1,7 @@
+{
+	"Address":			"",
+	"Project":			"${PROJECT}",
+	"FirestoreDatabaseID":		"test-${shell whoami}",
+	"FirebaseAdminCredentials":	"${shell cat test-jwt.json}",
+	"FirebaseAPIKey":		"dfgsdfgsdfgsdfgsdfgsdfg"
+}

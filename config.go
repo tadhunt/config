@@ -1,26 +1,40 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"reflect"
+
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	secretmanagerpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
-func Parse(src string, config any) error {
-	if strings.HasPrefix(src, "secretmgr:") {
-		return fmt.Errorf("secretmgr unimplemented")
-	}
+const (
+	SecretMgr = "secretmgr:"
+)
 
-	data, err := os.ReadFile(src)
+func SecretPath(project string, name string, version string) string {
+	return fmt.Sprintf("secretmgr:projects/%s/secrets/%s/versions/%s", project, name, version)
+}
+
+func Parse(ctx context.Context, src string, config any) error {
+	var err error
+	var data []byte
+	if strings.HasPrefix(src, SecretMgr) {
+		path := src[len(SecretMgr):]
+		data, err = loadSecret(ctx, path)
+	} else {
+		data, err = os.ReadFile(src)
+	}
 	if err != nil {
 		return err
 	}
 
 	sdata := string(data)
-
 	sdata = os.Expand(sdata, RunOrExpandEnv)
 
 	err = json.Unmarshal([]byte(sdata), config)
@@ -31,8 +45,36 @@ func Parse(src string, config any) error {
 	return unescape(config)
 }
 
-func Dump(config any, dst string) error {
+func loadSecret(ctx context.Context, path string) ([]byte, error) {
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: path,
+	}
+
+	result, err := client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("load %s: %v", path, err)
+	}
+
+	return result.Payload.Data, nil
+}
+
+func Serialize(config any) ([]byte, error) {
 	raw, err := json.MarshalIndent(config, "", " ")
+	if err != nil {
+		return nil, err
+	}
+
+	return raw, err
+}
+
+func Dump(config any, dst string) error {
+	raw, err := Serialize(config)
 	if err != nil {
 		return err
 	}
@@ -43,6 +85,50 @@ func Dump(config any, dst string) error {
 	}
 
 	return nil
+}
+
+func SaveSecret(ctx context.Context, project string, name string, cfg any) (string, error) {
+	data, err := Serialize(cfg)
+	if err != nil {
+		return "", err
+	}
+
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	creq := &secretmanagerpb.CreateSecretRequest{
+		Parent:   fmt.Sprintf("projects/%s", project),
+		SecretId: name,
+		Secret: &secretmanagerpb.Secret{
+			Replication: &secretmanagerpb.Replication{
+				Replication: &secretmanagerpb.Replication_Automatic_{
+					Automatic: &secretmanagerpb.Replication_Automatic{},
+				},
+			},
+		},
+	}
+
+	secret, err := client.CreateSecret(ctx, creq)
+	if err != nil {
+		return "", fmt.Errorf("create %s: %v", name, err)
+	}
+
+	areq := &secretmanagerpb.AddSecretVersionRequest{
+		Parent: secret.Name,
+		Payload: &secretmanagerpb.SecretPayload{
+			Data: data,
+		},
+	}
+
+	version, err := client.AddSecretVersion(ctx, areq)
+	if err != nil {
+		return "", fmt.Errorf("add version %s: %v", name, err)
+	}
+
+	return version.Name, nil
 }
 
 func unescape(cfg any) error {

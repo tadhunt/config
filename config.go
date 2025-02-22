@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,6 +12,8 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -61,7 +64,23 @@ func loadSecret(ctx context.Context, path string) ([]byte, error) {
 		return nil, fmt.Errorf("load %s: %v", path, err)
 	}
 
-	return result.Payload.Data, nil
+	data := make([]byte, base64.StdEncoding.DecodedLen(len(result.Payload.Data)))
+
+	payload := result.Payload.Data
+	if payload[0] == '"' {
+		payload = payload[1:]
+	}
+	if payload[len(payload)-1] == '"' {
+		payload = payload[:len(payload)-1]
+	}
+
+        n, err := base64.StdEncoding.Decode(data, payload)
+        if err != nil {
+                return result.Payload.Data, err
+        }
+	data = data[:n]
+
+	return data, nil
 }
 
 func Serialize(config any) ([]byte, error) {
@@ -111,13 +130,17 @@ func SaveSecret(ctx context.Context, project string, name string, cfg any) (stri
 		},
 	}
 
-	secret, err := client.CreateSecret(ctx, creq)
+	_, err = client.CreateSecret(ctx, creq)
 	if err != nil {
-		return "", fmt.Errorf("create %s: %v", name, err)
+		st, ok := status.FromError(err)
+		if !ok || st.Code() != codes.AlreadyExists {
+			return "", fmt.Errorf("create %s: %v", name, err)
+		}
+		// already exists, add a new version
 	}
 
 	areq := &secretmanagerpb.AddSecretVersionRequest{
-		Parent: secret.Name,
+		Parent:  fmt.Sprintf("projects/%s/secrets/%s", project, name),
 		Payload: &secretmanagerpb.SecretPayload{
 			Data: data,
 		},

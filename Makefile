@@ -1,4 +1,5 @@
 export PROJECT := cleverlikelms-dev
+export GOOGLE_APPLICATION_CREDENTIALS := ./secrets/credentials.json
 
 all:
 	go mod tidy

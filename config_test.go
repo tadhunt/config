@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 	"reflect"
+
+	"github.com/google/uuid"
 )
 
 type TestConfig struct {
@@ -47,6 +49,8 @@ func TestParseSecret(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+
+	cfg.Address = uuid.New().String()
 
 	data, err := Serialize(cfg)
 	if err != nil {

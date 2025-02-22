@@ -2,7 +2,11 @@ module github.com/tadhunt/config
 
 go 1.23.4
 
-require cloud.google.com/go/secretmanager v1.14.5
+require (
+	cloud.google.com/go/secretmanager v1.14.5
+	github.com/google/uuid v1.6.0
+	google.golang.org/grpc v1.70.0
+)
 
 require (
 	cloud.google.com/go/auth v0.14.1 // indirect
@@ -32,6 +36,5 @@ require (
 	google.golang.org/genproto v0.0.0-20250219182151-9fdb1cabc7b2 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250212204824-5a70512c5d8b // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250212204824-5a70512c5d8b // indirect
-	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 )

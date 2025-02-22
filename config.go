@@ -9,7 +9,7 @@ import (
 	"reflect"
 )
 
-func LoadConfig(src string, config any) error {
+func Parse(src string, config any) error {
 	if strings.HasPrefix(src, "secretmgr:") {
 		return fmt.Errorf("secretmgr unimplemented")
 	}

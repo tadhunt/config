@@ -76,7 +76,7 @@ func loadSecret(ctx context.Context, path string) ([]byte, error) {
 
         n, err := base64.StdEncoding.Decode(data, payload)
         if err != nil {
-                return result.Payload.Data, err
+                return result.Payload.Data, nil
         }
 	data = data[:n]
 

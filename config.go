@@ -168,7 +168,7 @@ func unescape(cfg any) error {
 	}
 
 	for i := 0; i < dt.NumField(); i++ {
-		//ft := dt.Field(i)
+		fieldName := dt.Field(i).Name
 		fv := dv.Field(i)
 		field := fv.Addr().Interface()
 
@@ -180,7 +180,7 @@ func unescape(cfg any) error {
 					return err
 				}
 			}
-			return fmt.Errorf("unhandled type %T", v)
+			return fmt.Errorf("field %s unhandled type %T", fieldName, v)
 		case *string:
 			*v = JSONUnEscape(*v)
 		}

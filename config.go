@@ -45,7 +45,7 @@ func Parse(ctx context.Context, src string, config any) error {
 		return err
 	}
 
-	return unescape(config)
+	return unescape("root", config)
 }
 
 func loadSecret(ctx context.Context, path string) ([]byte, error) {
@@ -154,33 +154,40 @@ func SaveSecret(ctx context.Context, project string, name string, cfg any) (stri
 	return version.Name, nil
 }
 
-func unescape(cfg any) error {
+func unescape(path string, cfg any) error {
 	dt := reflect.TypeOf(cfg)
 	if dt.Kind() != reflect.Pointer {
-		return fmt.Errorf("expected pointer got %T", cfg)
+		return fmt.Errorf("%s: expected pointer got %T", path, cfg)
 	}
 
 	dv := reflect.ValueOf(cfg).Elem()
 	dt = dv.Type()
 
 	if dt.Kind() != reflect.Struct {
-		return fmt.Errorf("expected pointer to struct got %T", cfg)
+		return fmt.Errorf("%s: expected pointer to struct got %T", path, cfg)
 	}
 
 	for i := 0; i < dt.NumField(); i++ {
-		fieldName := dt.Field(i).Name
+		field := dt.Field(i)
+		//ft := dt.Field(i)
 		fv := dv.Field(i)
-		field := fv.Addr().Interface()
 
-		switch v := field.(type) {
+		if !field.IsExported() {
+			continue
+		}
+
+		ifc := fv.Addr().Interface()
+
+		switch v := ifc.(type) {
 		default:
-			if fv.Type().Kind() == reflect.Pointer && fv.Elem().Type().Kind() == reflect.Struct {
-				err := unescape(field)
-				if err == nil {
+			if fv.Type().Kind() == reflect.Struct {
+				err := unescape(path + "." + field.Name, ifc)
+				if err != nil {
 					return err
 				}
+				break
 			}
-			return fmt.Errorf("field %s unhandled type %T", fieldName, v)
+			return fmt.Errorf("unhandled type %T", v)
 		case *string:
 			*v = JSONUnEscape(*v)
 		}

@@ -190,6 +190,10 @@ func unescape(path string, cfg any) error {
 			return fmt.Errorf("unhandled type %T", v)
 		case *string:
 			*v = JSONUnEscape(*v)
+		case *[]string:
+			for i := range *v {
+				(*v)[i] = JSONUnEscape((*v)[i])
+			}
 		}
 	}
 

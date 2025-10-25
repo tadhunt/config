@@ -15,6 +15,8 @@ type TestConfig struct {
 	FirestoreDatabaseID      string
 	FirebaseAdminCredentials string
 	FirebaseAPIKey           string
+	Slice                    []string
+	NilSlice                 []string
 }
 
 func TestParseFile(t *testing.T) {
@@ -43,6 +45,12 @@ func TestParseFile(t *testing.T) {
 }
 
 func TestParseSecret(t *testing.T) {
+	testParseSecret := os.Getenv("TEST_PARSE_SECRET")
+	if testParseSecret != "true" {
+		t.Logf("skipping (set 'TEST_PARSE_SECRET=true' to enable)")
+		return
+	}
+
 	cfg := &TestConfig{} 
 
 	err := Parse(context.Background(), "config-test.json", cfg)

@@ -3,5 +3,7 @@
 	"Project":			"${PROJECT}",
 	"FirestoreDatabaseID":		"test-${shell whoami}",
 	"FirebaseAdminCredentials":	"${shell cat test-jwt.json}",
-	"FirebaseAPIKey":		"dfgsdfgsdfgsdfgsdfgsdfg"
+	"FirebaseAPIKey":		"dfgsdfgsdfgsdfgsdfgsdfg",
+	"Slice":                        ["a", "b", "c"],
+	"NilSlice":                     null
 }

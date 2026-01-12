@@ -17,6 +17,7 @@ type TestConfig struct {
 	FirebaseAPIKey           string
 	Slice                    []string
 	NilSlice                 []string
+	Bool                     bool
 }
 
 func TestParseFile(t *testing.T) {
@@ -25,6 +26,9 @@ func TestParseFile(t *testing.T) {
 	err := Parse(context.Background(), "config-test.json", cfg)
 	if err != nil {
 		t.Fatalf("%v", err)
+	}
+	if !cfg.Bool {
+		t.Fatalf("expected Bool to be true")
 	}
 
 	err = Dump(cfg, "config-dump.json")

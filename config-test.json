@@ -5,5 +5,6 @@
 	"FirebaseAdminCredentials":	"${shell cat test-jwt.json}",
 	"FirebaseAPIKey":		"dfgsdfgsdfgsdfgsdfgsdfg",
 	"Slice":                        ["a", "b", "c"],
-	"NilSlice":                     null
+	"NilSlice":                     null,
+	"Bool":                         true
 }

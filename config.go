@@ -194,6 +194,7 @@ func unescape(path string, cfg any) error {
 			for i := range *v {
 				(*v)[i] = JSONUnEscape((*v)[i])
 			}
+		case *bool:
 		}
 	}
 
